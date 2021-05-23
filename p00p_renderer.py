@@ -1,3 +1,6 @@
+#!/usr/bin/env python3o
+
+import argparse
 import sys
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -7,9 +10,16 @@ import sentence_mixing.sentence_mixer as sm
 from sentence_mixing.video_creator.video import create_video_file
 from sentence_mixing.video_creator.download import dl_video
 
-if __name__ == "__main__":
-    path = sys.argv[1]
-    config_path = sys.argv[2]
+DEFAULT_OUTPUT_FILE = "output.mp4"
+
+DESCRIPTION = "Simple tool to render a p00p project into a video"
+
+PROJECT_PATH_HELP = "path to the p00p project file"
+CONFIG_PATH_HELP = "path to the json config file"
+OUTPUT_FILE_HELP = f"path to the output file (default: {DEFAULT_OUTPUT_FILE})"
+TIMESTAMP_OUTPUT_FORMAT_HELP = "determines if the output format should be ffmpeg timestamp list. If this option is activated, output file option will be ignored"
+
+def main(p00p_path, config_path, output_file, timestamp_output_format):
 
     with open(config_path) as f:
         config = json.load(f)
@@ -18,7 +28,7 @@ if __name__ == "__main__":
 
     sm.prepare_sm_config_dict(config)
 
-    p = project.load_project(path)
+    p = project.load_project(p00p_path)
 
     urls = p.urls[0]
     vid_paths = list(map(dl_video, urls))
@@ -46,9 +56,41 @@ if __name__ == "__main__":
     print("Segment processing done !")
     print("Exporting video")
 
-    export_filename = "out.mp4"
     phonems = []
     for segment in p.ordered_segments:
         phonems.extend(segment.combo.get_audio_phonems())
 
-    create_video_file(phonems, export_filename)
+    create_video_file(phonems, output_file)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument(
+        "p00p_path",
+        metavar="PROJECT_PATH",
+        action="store",
+        help=PROJECT_PATH_HELP,
+    )
+    parser.add_argument(
+        "config_path",
+        metavar="CONFIG_PATH",
+        action="store",
+        help=CONFIG_PATH_HELP,
+    )
+    parser.add_argument(
+        "-o",
+        "--output_file",
+        default=DEFAULT_OUTPUT_FILE,
+        help=OUTPUT_FILE_HELP,
+    )
+    parser.add_argument(
+        "-t",
+        "--timestamp",
+        dest="timestamp_output_format",
+        action="store_true",
+        default=False,
+        help=TIMESTAMP_OUTPUT_FORMAT_HELP,
+    )
+
+    args = parser.parse_args()
+
+    main(args.p00p_path, args.config_path, args.output_file, args.timestamp_output_format)
