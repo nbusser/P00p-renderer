@@ -41,7 +41,7 @@ def main(p00p_path, config_path, output_file, ffmpeg_command):
         video.extension = path[n + 1 :]
 
     print("Processing segments")
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor() as executor:
         futures = [executor.submit(combo.compute(videos)) for combo in p.ordered_segments]
 
         while len(futures) > 0:
