@@ -40,7 +40,7 @@ def main(p00p_path, config_path, output_file, ffmpeg_command):
         assert path[:n] == video._base_path
         video.extension = path[n + 1 :]
 
-    print("Processing segments")
+    print("Processing segments", file=sys.stderr)
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(combo.compute(videos)) for combo in p.ordered_segments]
 
@@ -49,13 +49,13 @@ def main(p00p_path, config_path, output_file, ffmpeg_command):
             while i < len(futures):
                 if futures[i].done():
                     n_finished = len(p.ordered_segments) - (len(futures) - 1)
-                    print("Segment {}/{} computed".format(n_finished, len(p.ordered_segments)))
+                    print("Segment {}/{} computed".format(n_finished, len(p.ordered_segments)), file=sys.stderr)
                     futures.pop(i)
                 else:
                     i += 1
 
-    print("Segment processing done !")
-    print("Exporting video")
+    print("Segment processing done !", file=sys.stderr)
+    print("Exporting video", file=sys.stderr)
 
     phonems = []
     for segment in p.ordered_segments:
