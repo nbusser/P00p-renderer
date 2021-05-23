@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import project
 import sentence_mixing.sentence_mixer as sm
 from sentence_mixing.video_creator.video import create_video_file
+from ffmpeg_export import create_ffmpeg_command
 from sentence_mixing.video_creator.download import dl_video
 
 DEFAULT_OUTPUT_FILE = "output.mp4"
@@ -17,9 +18,9 @@ DESCRIPTION = "Simple tool to render a p00p project into a video"
 PROJECT_PATH_HELP = "path to the p00p project file"
 CONFIG_PATH_HELP = "path to the json config file"
 OUTPUT_FILE_HELP = f"path to the output file (default: {DEFAULT_OUTPUT_FILE})"
-TIMESTAMP_OUTPUT_FORMAT_HELP = "determines if the output format should be ffmpeg timestamp list. If this option is activated, output file option will be ignored"
+FFMPEG_COMMAND_HELP = "determines if the output format should be an ffmpeg command. If this option is activated, output file option will be ignored"
 
-def main(p00p_path, config_path, output_file, timestamp_output_format):
+def main(p00p_path, config_path, output_file, ffmpeg_command):
 
     with open(config_path) as f:
         config = json.load(f)
@@ -60,7 +61,10 @@ def main(p00p_path, config_path, output_file, timestamp_output_format):
     for segment in p.ordered_segments:
         phonems.extend(segment.combo.get_audio_phonems())
 
-    create_video_file(phonems, output_file)
+    if ffmpeg_command:
+        create_ffmpeg_command(phonems)
+    else:
+        create_video_file(phonems, output_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
@@ -83,14 +87,13 @@ if __name__ == "__main__":
         help=OUTPUT_FILE_HELP,
     )
     parser.add_argument(
-        "-t",
-        "--timestamp",
-        dest="timestamp_output_format",
+        "--ffmpeg",
+        dest="ffmpeg_command",
         action="store_true",
         default=False,
-        help=TIMESTAMP_OUTPUT_FORMAT_HELP,
+        help=FFMPEG_COMMAND_HELP,
     )
 
     args = parser.parse_args()
 
-    main(args.p00p_path, args.config_path, args.output_file, args.timestamp_output_format)
+    main(args.p00p_path, args.config_path, args.output_file, args.ffmpeg_command)
