@@ -3,11 +3,13 @@
 import argparse
 import sys
 import json
+import enum
 from concurrent.futures import ThreadPoolExecutor
 
 import project
 import sentence_mixing.sentence_mixer as sm
 from sentence_mixing.video_creator.video import create_video_file
+from json_export import create_json
 from ffmpeg_export import create_ffmpeg_command
 from sentence_mixing.video_creator.download import dl_video
 
@@ -17,10 +19,12 @@ DESCRIPTION = "Simple tool to render a p00p project into a video"
 
 PROJECT_PATH_HELP = "path to the p00p project file"
 CONFIG_PATH_HELP = "path to the json config file"
+
 OUTPUT_FILE_HELP = f"path to the output file (default: {DEFAULT_OUTPUT_FILE})"
+JSON_EXPORT_HELP = "specifies if the output target is a json string"
 FFMPEG_COMMAND_HELP = "determines if the output format should be an ffmpeg command. If this option is activated, output file option will be ignored"
 
-def main(p00p_path, config_path, output_file, ffmpeg_command):
+def main(p00p_path, config_path, output_file, json_export, ffmpeg_command):
 
     with open(config_path) as f:
         config = json.load(f)
@@ -61,7 +65,9 @@ def main(p00p_path, config_path, output_file, ffmpeg_command):
     for segment in p.ordered_segments:
         phonems.extend(segment.combo.get_audio_phonems())
 
-    if ffmpeg_command:
+    if json_export:
+        create_json(phonems)
+    elif ffmpeg_command:
         create_ffmpeg_command(phonems)
     else:
         create_video_file(phonems, output_file)
@@ -80,13 +86,23 @@ if __name__ == "__main__":
         action="store",
         help=CONFIG_PATH_HELP,
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-o",
-        "--output_file",
+        "--output-file",
+        metavar="output_file",
         default=DEFAULT_OUTPUT_FILE,
         help=OUTPUT_FILE_HELP,
     )
-    parser.add_argument(
+    group.add_argument(
+        "-j",
+        "--json-export",
+        dest="json_export",
+        action="store_true",
+        default=False,
+        help=JSON_EXPORT_HELP,
+    )
+    group.add_argument(
         "--ffmpeg",
         dest="ffmpeg_command",
         action="store_true",
@@ -96,4 +112,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.p00p_path, args.config_path, args.output_file, args.ffmpeg_command)
+    main(args.p00p_path, args.config_path, args.json_export, args.output_file, args.ffmpeg_command)
